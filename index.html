@@ -14,7 +14,7 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
-<body class="pb-28 text-slate-800">
+<body class="pb-36 text-slate-800">
 
     <!-- แถบด้านบน -->
     <header class="bg-white shadow-sm sticky top-0 z-30">
@@ -27,38 +27,66 @@
                 กำลังโหลด...
             </div>
         </div>
+        <!-- ตัวกรองหมวดหมู่ -->
+        <div class="border-t border-slate-100 bg-white">
+            <div class="px-4 py-2 flex gap-2 overflow-x-auto hide-scrollbar max-w-md mx-auto" id="category-container">
+                <!-- หมวดหมู่จะถูกโหลดที่นี่ -->
+            </div>
+        </div>
     </header>
 
+    <!-- พื้นที่โชว์คูปองด้านบนสุด (เฉพาะคูปองที่ตั้งให้แสดง) -->
+    <div class="max-w-md mx-auto px-4 py-4 hidden" id="coupon-showcase-container">
+        <h3 class="font-bold text-sm text-slate-700 mb-2"><i class="fas fa-ticket-alt text-amber-500 mr-1"></i> โค้ดส่วนลด / โปรโมชั่น</h3>
+        <div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2" id="coupon-showcase">
+            <!-- คูปองจะถูกเรนเดอร์ที่นี่ -->
+        </div>
+    </div>
+
     <!-- พื้นที่แสดงเมนูอาหาร -->
-    <main class="max-w-md mx-auto px-4 py-4" id="menu-container">
+    <main class="max-w-md mx-auto px-4 pb-4" id="menu-container">
         <div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p>กำลังโหลดเมนู...</p></div>
     </main>
 
     <!-- ปุ่มบริการเสริม (เรียกพนักงาน) -->
-    <div class="fixed bottom-24 right-4 z-20">
+    <div class="fixed bottom-32 right-4 z-20">
         <button onclick="callStaff()" class="bg-amber-500 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl hover:bg-amber-600 transition-colors">
             <i class="fas fa-bell"></i>
         </button>
     </div>
 
-    <!-- แถบตะกร้าสินค้า (ด้านล่าง) -->
+    <!-- แถบตะกร้าสินค้า (ด้านล่าง) พร้อมระบบคูปอง -->
     <div id="cart-bar" class="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.05)] rounded-t-3xl transition-transform duration-300 transform translate-y-full z-30 border-t border-slate-100">
-        <div class="max-w-md mx-auto px-6 py-4 flex justify-between items-center">
-            <div>
-                <p class="text-xs text-slate-500 font-medium">รวม <span id="cart-count">0</span> รายการ</p>
-                <p class="text-xl font-bold text-emerald-600">฿<span id="cart-total">0</span></p>
+        <div class="max-w-md mx-auto px-6 py-4">
+            
+            <!-- ส่วนลดคูปอง -->
+            <div class="flex gap-2 mb-3">
+                <input type="text" id="table-coupon-input" placeholder="พิมพ์โค้ดส่วนลดที่นี่..." class="w-full p-2 border border-slate-200 rounded-lg text-sm uppercase outline-none focus:border-emerald-500 bg-slate-50">
+                <button onclick="applyTableCoupon()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap shadow-sm hover:bg-slate-900">ใช้คูปอง</button>
             </div>
-            <div class="flex gap-2">
-                <button onclick="requestBill()" class="bg-slate-100 text-slate-600 px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-200">เช็คบิล</button>
-                <button onclick="submitDineInOrder()" id="btn-submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl font-bold shadow-md flex items-center gap-2">
-                    ส่งเข้าครัว <i class="fas fa-utensils"></i>
-                </button>
+            <div id="table-discount-row" class="flex justify-between items-center mb-3 text-sm text-emerald-500 hidden bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100">
+                <span><i class="fas fa-ticket-alt"></i> ส่วนลด <span id="table-applied-coupon-text" class="font-bold"></span></span>
+                <span class="font-bold">- ฿<span id="table-cart-discount">0</span></span>
+            </div>
+
+            <!-- สรุปยอด -->
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">รวม <span id="cart-count">0</span> รายการ</p>
+                    <p class="text-xl font-bold text-emerald-600">฿<span id="cart-total">0</span></p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="requestBill()" class="bg-slate-100 text-slate-600 px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-200">เช็คบิล</button>
+                    <button onclick="submitDineInOrder()" id="btn-submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl font-bold shadow-md flex items-center gap-2">
+                        ส่งเข้าครัว <i class="fas fa-utensils"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- ======================================================= -->
-    <!-- MODAL: หน้าต่างเลือก Option อาหาร (ท็อปปิ้ง/ความเผ็ด) -->
+    <!-- MODAL: หน้าต่างเลือก Option อาหาร -->
     <!-- ======================================================= -->
     <div id="option-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex flex-col justify-end">
         <div class="bg-white w-full max-w-md mx-auto rounded-t-3xl flex flex-col max-h-[85vh] slide-up shadow-2xl">
@@ -70,7 +98,6 @@
                 <button onclick="closeOptionModal()" class="w-8 h-8 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button>
             </div>
             <div class="overflow-y-auto p-4 space-y-6 flex-1 bg-slate-50 pb-20" id="modal-options-container">
-                <!-- ตัวเลือกจะถูกแทรกที่นี่ -->
             </div>
             <div class="p-4 bg-white border-t border-slate-100 sticky bottom-0 z-10">
                 <button onclick="addItemToCart()" class="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-bold text-lg flex justify-between items-center px-6 shadow-md">
@@ -86,9 +113,8 @@
     <!-- ======================================================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // 1. ตั้งค่า Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAsgcKhn0V1lYjF754aypxZv5C-PmHCvno",
             authDomain: "mobile-first-5543c.firebaseapp.com",
@@ -100,62 +126,146 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // ==========================================
-        // 🎯 2. ฝังเลขโต๊ะของไฟล์นี้ (เปลี่ยนเลขตรงนี้ได้เลย!)
-        // ==========================================
         const TABLE_NUMBER = "02"; 
-        
-        // แสดงเลขโต๊ะที่มุมขวาบน
         document.getElementById('table-badge').innerText = `โต๊ะ ${TABLE_NUMBER}`;
-        // เปลี่ยน Title ของหน้าเว็บให้ตรงกับโต๊ะ
         document.title = `สั่งอาหาร - โต๊ะ ${TABLE_NUMBER}`;
-
-        // ==========================================
         
         let cart = [];
-        let allMenus = []; // เก็บข้อมูลเมนูทั้งหมดที่โหลดมา
+        let allMenus = []; 
+        let allCategories = [];
+        let currentCategory = 'all';
         let currentItemSelecting = null;
         let currentItemBasePrice = 0;
 
-        // 3. โหลดเมนูจาก Firebase (Real-time)
-        const q = query(collection(db, "menu_items"), orderBy("created_at", "desc"));
-        onSnapshot(q, (snapshot) => {
-            const container = document.getElementById('menu-container');
-            container.innerHTML = '';
-            allMenus = [];
+        let allCoupons = [];
+        let appliedDiscount = 0;
+        let appliedCouponCode = '';
 
-            if (snapshot.empty) {
-                container.innerHTML = '<div class="text-center py-10 text-slate-400">ยังไม่มีเมนูในระบบ</div>';
+        // ฟังก์ชันตรวจเช็คว่าคูปองยังใช้งานได้หรือไม่ (วัน-เวลา และโควต้า)
+        const isCouponValid = (c) => {
+            if(c.active === false) return false;
+            const now = new Date();
+            if (c.startDate && new Date(c.startDate) > now) return false;
+            if (c.endDate && new Date(c.endDate) < now) return false;
+            if (c.usageLimit && c.usageLimit > 0 && (c.usedCount || 0) >= c.usageLimit) return false;
+            return true;
+        };
+
+        onSnapshot(collection(db, "coupons"), (snapshot) => {
+            allCoupons = [];
+            snapshot.forEach(doc => allCoupons.push({ id: doc.id, ...doc.data() }));
+            window.renderCouponsShowcase(); 
+        });
+
+        window.renderCouponsShowcase = () => {
+            const container = document.getElementById('coupon-showcase');
+            const wrapper = document.getElementById('coupon-showcase-container');
+            
+            // แสดงเฉพาะที่ visibility === 'show' และยังไม่หมดเวลา/โควต้า
+            const visibleCoupons = allCoupons.filter(c => c.visibility === 'show' && isCouponValid(c));
+            
+            if(visibleCoupons.length === 0) {
+                wrapper.classList.add('hidden');
                 return;
             }
+            
+            wrapper.classList.remove('hidden');
+            container.innerHTML = visibleCoupons.map(c => `
+                <div class="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-3 text-white min-w-[200px] flex-shrink-0 shadow-md relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-12 h-12 bg-white/20 rounded-full"></div>
+                    <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-white/10 rounded-full"></div>
+                    <h4 class="font-bold text-lg mb-0 tracking-wide">${c.code}</h4>
+                    <p class="text-[11px] text-emerald-50 mb-3 opacity-90">ส่วนลด ${c.value}${c.type === 'percent' ? '%' : ' บาท'}</p>
+                    <button onclick="autoApplyCoupon('${c.code}')" class="bg-white text-emerald-600 text-xs font-bold px-3 py-1.5 rounded-lg w-full hover:bg-slate-50 transition-colors shadow-sm relative z-10">
+                        เก็บคูปอง / ใช้เลย
+                    </button>
+                </div>
+            `).join('');
+        };
+
+        window.autoApplyCoupon = (code) => {
+            document.getElementById('table-coupon-input').value = code;
+            if (cart.length > 0) {
+                applyTableCoupon();
+            } else {
+                alert(`เก็บโค้ด ${code} สำเร็จ! กรุณาเลือกเมนูอาหารลงตะกร้าก่อนระบบจึงจะคำนวณส่วนลดให้`);
+            }
+        };
+
+        const qMenu = query(collection(db, "menu_items"), orderBy("created_at", "desc"));
+        onSnapshot(qMenu, (snapshot) => {
+            allMenus = [];
+            allCategories = [];
 
             snapshot.forEach((docSnap) => {
                 const item = { id: docSnap.id, ...docSnap.data() };
                 allMenus.push(item);
+                const cat = item.category || 'ไม่มีหมวดหมู่';
+                if(!allCategories.includes(cat)) {
+                    allCategories.push(cat);
+                }
+            });
+            window.renderCategoryFilters();
+            window.renderMenus();
+        });
 
+        window.renderCategoryFilters = () => {
+            const container = document.getElementById('category-container');
+            if(!container) return;
+            let html = `<button onclick="window.setCategory('all')" class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${currentCategory === 'all' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">ทั้งหมด</button>`;
+            allCategories.forEach(c => {
+                html += `<button onclick="window.setCategory('${c}')" class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${currentCategory === c ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${c}</button>`;
+            });
+            container.innerHTML = html;
+        };
+
+        window.setCategory = (cat) => {
+            currentCategory = cat;
+            window.renderCategoryFilters();
+            window.renderMenus();
+        };
+
+        window.renderMenus = () => {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = '';
+            
+            let filtered = allMenus;
+            if(currentCategory !== 'all') {
+                filtered = allMenus.filter(m => (m.category || 'ไม่มีหมวดหมู่') === currentCategory);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="text-center py-10 text-slate-400">ไม่มีเมนูในหมวดหมู่นี้</div>';
+                return;
+            }
+
+            filtered.forEach(item => {
                 const hasOptions = item.options && item.options.length > 0;
+                const isOutOfStock = item.stock !== undefined && item.stock !== null && item.stock <= 0;
+                
+                const btnHtml = isOutOfStock
+                    ? `<button disabled class="px-4 py-1.5 rounded-full bg-slate-200 text-rose-500 font-bold text-sm cursor-not-allowed">หมด</button>`
+                    : `<button onclick="window.openOptionModal('${item.id}')" class="px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-600 font-bold text-sm hover:bg-emerald-500 hover:text-white transition-colors">เลือก <i class="fas fa-plus text-xs ml-1"></i></button>`;
                 
                 container.innerHTML += `
-                    <div class="bg-white rounded-2xl p-3 flex gap-4 mb-4 shadow-sm border border-slate-100 relative">
+                    <div class="bg-white rounded-2xl p-3 flex gap-4 mb-4 shadow-sm border border-slate-100 relative ${isOutOfStock ? 'opacity-60 grayscale-[50%]' : ''}">
                         <img src="${item.img}" class="w-24 h-24 rounded-xl object-cover bg-slate-100">
                         <div class="flex-1 flex flex-col justify-between py-1">
                             <div>
                                 <h3 class="font-bold text-slate-800 leading-tight">${item.name}</h3>
-                                ${hasOptions ? `<p class="text-[10px] text-amber-500 mt-1"><i class="fas fa-sliders-h"></i> ปรับแต่งได้</p>` : ''}
+                                ${hasOptions && !isOutOfStock ? `<p class="text-[10px] text-amber-500 mt-1"><i class="fas fa-sliders-h"></i> ปรับแต่งได้</p>` : ''}
+                                ${isOutOfStock ? `<p class="text-[10px] text-rose-500 mt-1 font-bold"><i class="fas fa-times-circle"></i> สินค้าหมด</p>` : ''}
                             </div>
                             <div class="flex justify-between items-center mt-2">
                                 <span class="font-bold text-emerald-600">฿${item.price}</span>
-                                <button onclick="window.openOptionModal('${item.id}')" class="px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-600 font-bold text-sm hover:bg-emerald-500 hover:text-white transition-colors">
-                                    เลือก <i class="fas fa-plus text-xs ml-1"></i>
-                                </button>
+                                ${btnHtml}
                             </div>
                         </div>
                     </div>
                 `;
             });
-        });
+        };
 
-        // 4. ระบบเปิด Modal เลือก Option
         window.openOptionModal = (itemId) => {
             const item = allMenus.find(m => m.id === itemId);
             if(!item) return;
@@ -170,7 +280,6 @@
             const optionsContainer = document.getElementById('modal-options-container');
             optionsContainer.innerHTML = '';
 
-            // ถ้ามี Option ให้สร้างรายการให้เลือก
             if (item.options && item.options.length > 0) {
                 item.options.forEach(group => {
                     const isSingle = group.type === 'single';
@@ -203,7 +312,6 @@
                 });
             }
 
-            // เพิ่มช่องหมายเหตุ
             optionsContainer.innerHTML += `
                 <div>
                     <h4 class="font-bold text-slate-800 mb-2">หมายเหตุเพิ่มเติม</h4>
@@ -216,7 +324,6 @@
 
         window.closeOptionModal = () => document.getElementById('option-modal').classList.add('hidden');
 
-        // 5. คำนวณราคาแบบ Real-time ใน Modal
         window.calculateModalPrice = () => {
             let addOnTotal = 0;
             document.querySelectorAll('#modal-options-container input:checked').forEach(input => {
@@ -225,7 +332,6 @@
             document.getElementById('modal-total-price').innerText = currentItemBasePrice + addOnTotal;
         };
 
-        // 6. เพิ่มลงตะกร้าพร้อม Option
         window.addItemToCart = () => {
             let selectedOptions = [];
             let addOnPrice = 0;
@@ -241,50 +347,124 @@
             cart.push({
                 id: currentItemSelecting.id,
                 name: currentItemSelecting.name,
-                price: currentItemBasePrice + addOnPrice, // ราคาต่อชิ้นที่บวก Option แล้ว
-                optionsText: selectedOptions.join(', '), // ข้อความ Option ส่งไปให้หลังบ้าน
+                price: currentItemBasePrice + addOnPrice,
+                optionsText: selectedOptions.join(', '),
                 qty: 1
             });
 
             window.closeOptionModal();
+            if (document.getElementById('table-coupon-input').value.trim() !== '') {
+                applyTableCoupon(false); 
+            } else {
+                updateCartUI();
+            }
+        };
+
+        window.applyTableCoupon = (showAlert = true) => {
+            const code = document.getElementById('table-coupon-input').value.trim().toUpperCase();
+            if(!code) return;
+            const coupon = allCoupons.find(c => c.code === code);
+            
+            if(!coupon || !isCouponValid(coupon)) {
+                if(showAlert) alert('คูปองไม่ถูกต้อง หมดเวลาโปรโมชั่น หรือสิทธิ์เต็มแล้ว');
+                document.getElementById('table-coupon-input').value = '';
+                appliedCouponCode = '';
+                updateCartUI();
+                return;
+            }
+
+            const applicableItemsInCart = cart.filter(item => coupon.applicable_items.includes(item.id));
+            if(applicableItemsInCart.length === 0) {
+                if(showAlert) alert('คูปองนี้ไม่สามารถใช้ร่วมกับเมนูในตะกร้าของคุณได้');
+                return;
+            }
+
+            let subtotalForDiscount = applicableItemsInCart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            if (coupon.type === 'amount') {
+                appliedDiscount = Math.min(coupon.value, subtotalForDiscount);
+            } else {
+                appliedDiscount = subtotalForDiscount * (coupon.value / 100);
+            }
+            appliedCouponCode = code;
+            
+            if(showAlert) alert('ใช้คูปองส่วนลดสำเร็จ!');
             updateCartUI();
         };
 
         function updateCartUI() {
             const bar = document.getElementById('cart-bar');
             document.getElementById('cart-count').innerText = cart.reduce((sum, i) => sum + i.qty, 0);
-            document.getElementById('cart-total').innerText = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            
+            if(appliedCouponCode) {
+                const coupon = allCoupons.find(c => c.code === appliedCouponCode);
+                if(coupon && isCouponValid(coupon)) {
+                    const applicableItems = cart.filter(item => coupon.applicable_items.includes(item.id));
+                    let subtotalForDiscount = applicableItems.reduce((sum, i) => sum + (i.price * i.qty), 0);
+                    appliedDiscount = coupon.type === 'amount' ? Math.min(coupon.value, subtotalForDiscount) : subtotalForDiscount * (coupon.value / 100);
+                } else {
+                    appliedDiscount = 0;
+                    appliedCouponCode = '';
+                }
+            }
+
+            const finalTotal = subtotal - appliedDiscount;
+            
+            if(appliedDiscount > 0) {
+                document.getElementById('table-discount-row').classList.remove('hidden');
+                document.getElementById('table-cart-discount').innerText = appliedDiscount.toFixed(2);
+                document.getElementById('table-applied-coupon-text').innerText = appliedCouponCode;
+            } else {
+                document.getElementById('table-discount-row').classList.add('hidden');
+                appliedCouponCode = '';
+            }
+
+            document.getElementById('cart-total').innerText = finalTotal > 0 ? finalTotal.toFixed(2) : '0';
             cart.length > 0 ? bar.classList.remove('translate-y-full') : bar.classList.add('translate-y-full');
         }
 
-        // 7. ส่งออเดอร์เข้าหลังบ้าน
         window.submitDineInOrder = async () => {
             const btn = document.getElementById('btn-submit');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังส่ง...';
             btn.disabled = true;
             
             try {
-                const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+                const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+                const finalTotal = subtotal - appliedDiscount;
                 
-                // จัดโครงสร้างให้แอดมินอ่านง่าย
                 const formattedItems = cart.map(item => ({
+                    id: item.id,
                     name: item.name,
                     qty: item.qty,
                     price: item.price,
-                    options: item.optionsText // ถ้าไม่มี Option จะเป็น string ว่าง
+                    options: item.optionsText
                 }));
 
                 await addDoc(collection(db, "orders"), {
                     type: "dine-in",
-                    table: TABLE_NUMBER, // ใช้ตัวแปรที่เราฝังไว้ด้านบน
+                    table: TABLE_NUMBER,
                     items: formattedItems,
-                    total: total,
+                    total: finalTotal > 0 ? finalTotal : 0,
+                    discount: appliedDiscount,
+                    couponCode: appliedCouponCode,
                     status: "รอคิว",
                     timestamp: serverTimestamp()
                 });
+
+                // อัปเดตยอดโควต้าคูปอง (ถ้ามีการใช้)
+                if(appliedCouponCode) {
+                    const coupon = allCoupons.find(c => c.code === appliedCouponCode);
+                    if(coupon) {
+                        await updateDoc(doc(db, "coupons", coupon.id), { usedCount: increment(1) });
+                    }
+                }
                 
                 alert(`✅ ส่งออเดอร์ของ โต๊ะ ${TABLE_NUMBER} เข้าครัวสำเร็จ!`);
                 cart = [];
+                appliedDiscount = 0;
+                appliedCouponCode = '';
+                document.getElementById('table-coupon-input').value = '';
                 updateCartUI();
             } catch (e) {
                 alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + e.message);
@@ -294,7 +474,6 @@
             }
         };
 
-        // 8. บริการเสริม
         window.callStaff = () => alert(`พนักงานกำลังไปหาคุณที่ โต๊ะ ${TABLE_NUMBER} กรุณารอสักครู่ครับ`);
         window.requestBill = () => alert(`รับทราบ! แคชเชียร์กำลังคำนวณยอดเงินของ โต๊ะ ${TABLE_NUMBER} เพื่อนำบิลมาให้ครับ`);
 
