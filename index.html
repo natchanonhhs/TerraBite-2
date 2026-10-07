@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สั่งอาหาร - โต๊ะ 02</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .slide-up { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    </style>
+</head>
+<body class="pb-28 text-slate-800">
+
+    <!-- แถบด้านบน -->
+    <header class="bg-white shadow-sm sticky top-0 z-30">
+        <div class="px-4 py-3 flex justify-between items-center max-w-md mx-auto">
+            <div>
+                <h1 class="text-xl font-bold text-emerald-700">The Grand Restaurant</h1>
+                <p class="text-xs text-slate-500">Dine-in Order</p>
+            </div>
+            <div class="bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-sm font-bold border border-emerald-200" id="table-badge">
+                กำลังโหลด...
+            </div>
+        </div>
+    </header>
+
+    <!-- พื้นที่แสดงเมนูอาหาร -->
+    <main class="max-w-md mx-auto px-4 py-4" id="menu-container">
+        <div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p>กำลังโหลดเมนู...</p></div>
+    </main>
+
+    <!-- ปุ่มบริการเสริม (เรียกพนักงาน) -->
+    <div class="fixed bottom-24 right-4 z-20">
+        <button onclick="callStaff()" class="bg-amber-500 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl hover:bg-amber-600 transition-colors">
+            <i class="fas fa-bell"></i>
+        </button>
+    </div>
+
+    <!-- แถบตะกร้าสินค้า (ด้านล่าง) -->
+    <div id="cart-bar" class="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.05)] rounded-t-3xl transition-transform duration-300 transform translate-y-full z-30 border-t border-slate-100">
+        <div class="max-w-md mx-auto px-6 py-4 flex justify-between items-center">
+            <div>
+                <p class="text-xs text-slate-500 font-medium">รวม <span id="cart-count">0</span> รายการ</p>
+                <p class="text-xl font-bold text-emerald-600">฿<span id="cart-total">0</span></p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="requestBill()" class="bg-slate-100 text-slate-600 px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-200">เช็คบิล</button>
+                <button onclick="submitDineInOrder()" id="btn-submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl font-bold shadow-md flex items-center gap-2">
+                    ส่งเข้าครัว <i class="fas fa-utensils"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- MODAL: หน้าต่างเลือก Option อาหาร (ท็อปปิ้ง/ความเผ็ด) -->
+    <!-- ======================================================= -->
+    <div id="option-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex flex-col justify-end">
+        <div class="bg-white w-full max-w-md mx-auto rounded-t-3xl flex flex-col max-h-[85vh] slide-up shadow-2xl">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-white rounded-t-3xl sticky top-0 z-10">
+                <div>
+                    <h3 class="font-bold text-lg text-slate-800" id="modal-item-name">ชื่อเมนู</h3>
+                    <p class="text-emerald-600 font-semibold">฿<span id="modal-base-price">0</span></p>
+                </div>
+                <button onclick="closeOptionModal()" class="w-8 h-8 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="overflow-y-auto p-4 space-y-6 flex-1 bg-slate-50 pb-20" id="modal-options-container">
+                <!-- ตัวเลือกจะถูกแทรกที่นี่ -->
+            </div>
+            <div class="p-4 bg-white border-t border-slate-100 sticky bottom-0 z-10">
+                <button onclick="addItemToCart()" class="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-bold text-lg flex justify-between items-center px-6 shadow-md">
+                    <span>เพิ่มลงตะกร้า</span>
+                    <span>฿<span id="modal-total-price">0</span></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- JAVASCRIPT & FIREBASE -->
+    <!-- ======================================================= -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // 1. ตั้งค่า Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAsgcKhn0V1lYjF754aypxZv5C-PmHCvno",
+            authDomain: "mobile-first-5543c.firebaseapp.com",
+            projectId: "mobile-first-5543c",
+            storageBucket: "mobile-first-5543c.firebasestorage.app",
+            messagingSenderId: "375984636440",
+            appId: "1:375984636440:web:685692699c3320e201f96d"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // ==========================================
+        // 🎯 2. ฝังเลขโต๊ะของไฟล์นี้ (เปลี่ยนเลขตรงนี้ได้เลย!)
+        // ==========================================
+        const TABLE_NUMBER = "02"; 
+        
+        // แสดงเลขโต๊ะที่มุมขวาบน
+        document.getElementById('table-badge').innerText = `โต๊ะ ${TABLE_NUMBER}`;
+        // เปลี่ยน Title ของหน้าเว็บให้ตรงกับโต๊ะ
+        document.title = `สั่งอาหาร - โต๊ะ ${TABLE_NUMBER}`;
+
+        // ==========================================
+        
+        let cart = [];
+        let allMenus = []; // เก็บข้อมูลเมนูทั้งหมดที่โหลดมา
+        let currentItemSelecting = null;
+        let currentItemBasePrice = 0;
+
+        // 3. โหลดเมนูจาก Firebase (Real-time)
+        const q = query(collection(db, "menu_items"), orderBy("created_at", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = '';
+            allMenus = [];
+
+            if (snapshot.empty) {
+                container.innerHTML = '<div class="text-center py-10 text-slate-400">ยังไม่มีเมนูในระบบ</div>';
+                return;
+            }
+
+            snapshot.forEach((docSnap) => {
+                const item = { id: docSnap.id, ...docSnap.data() };
+                allMenus.push(item);
+
+                const hasOptions = item.options && item.options.length > 0;
+                
+                container.innerHTML += `
+                    <div class="bg-white rounded-2xl p-3 flex gap-4 mb-4 shadow-sm border border-slate-100 relative">
+                        <img src="${item.img}" class="w-24 h-24 rounded-xl object-cover bg-slate-100">
+                        <div class="flex-1 flex flex-col justify-between py-1">
+                            <div>
+                                <h3 class="font-bold text-slate-800 leading-tight">${item.name}</h3>
+                                ${hasOptions ? `<p class="text-[10px] text-amber-500 mt-1"><i class="fas fa-sliders-h"></i> ปรับแต่งได้</p>` : ''}
+                            </div>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="font-bold text-emerald-600">฿${item.price}</span>
+                                <button onclick="window.openOptionModal('${item.id}')" class="px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-600 font-bold text-sm hover:bg-emerald-500 hover:text-white transition-colors">
+                                    เลือก <i class="fas fa-plus text-xs ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+
+        // 4. ระบบเปิด Modal เลือก Option
+        window.openOptionModal = (itemId) => {
+            const item = allMenus.find(m => m.id === itemId);
+            if(!item) return;
+
+            currentItemSelecting = item;
+            currentItemBasePrice = item.price;
+
+            document.getElementById('modal-item-name').innerText = item.name;
+            document.getElementById('modal-base-price').innerText = item.price;
+            document.getElementById('modal-total-price').innerText = item.price;
+            
+            const optionsContainer = document.getElementById('modal-options-container');
+            optionsContainer.innerHTML = '';
+
+            // ถ้ามี Option ให้สร้างรายการให้เลือก
+            if (item.options && item.options.length > 0) {
+                item.options.forEach(group => {
+                    const isSingle = group.type === 'single';
+                    const inputType = isSingle ? 'radio' : 'checkbox';
+                    const reqBadge = isSingle ? '<span class="text-xs text-rose-500 font-normal ml-2">*บังคับเลือก</span>' : '<span class="text-xs text-slate-400 font-normal ml-2">(เลือกหลายข้อได้)</span>';
+                    
+                    let choicesHTML = '';
+                    group.choices.forEach((choice, index) => {
+                        const priceTag = choice.price > 0 ? `<span class="text-sm text-emerald-600 font-medium">+฿${choice.price}</span>` : '';
+                        const checked = (isSingle && index === 0) ? 'checked' : ''; 
+                        
+                        choicesHTML += `
+                            <label class="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl mb-2 cursor-pointer hover:border-emerald-300">
+                                <div class="flex items-center gap-3">
+                                    <input type="${inputType}" name="opt_${group.id}" value="${choice.name}" data-price="${choice.price}" ${checked} onchange="window.calculateModalPrice()"
+                                        class="w-5 h-5 text-emerald-600 focus:ring-emerald-500 ${isSingle ? 'rounded-full' : 'rounded'}">
+                                    <span class="text-slate-700 text-sm">${choice.name}</span>
+                                </div>
+                                ${priceTag}
+                            </label>
+                        `;
+                    });
+
+                    optionsContainer.innerHTML += `
+                        <div>
+                            <h4 class="font-bold text-slate-800 mb-3 flex items-center">${group.title} ${reqBadge}</h4>
+                            ${choicesHTML}
+                        </div>
+                    `;
+                });
+            }
+
+            // เพิ่มช่องหมายเหตุ
+            optionsContainer.innerHTML += `
+                <div>
+                    <h4 class="font-bold text-slate-800 mb-2">หมายเหตุเพิ่มเติม</h4>
+                    <textarea id="special-note" rows="2" placeholder="เช่น ไม่ใส่ผัก, ขอช้อนส้อม..." class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-emerald-500 outline-none"></textarea>
+                </div>
+            `;
+
+            document.getElementById('option-modal').classList.remove('hidden');
+        };
+
+        window.closeOptionModal = () => document.getElementById('option-modal').classList.add('hidden');
+
+        // 5. คำนวณราคาแบบ Real-time ใน Modal
+        window.calculateModalPrice = () => {
+            let addOnTotal = 0;
+            document.querySelectorAll('#modal-options-container input:checked').forEach(input => {
+                addOnTotal += parseFloat(input.getAttribute('data-price') || 0);
+            });
+            document.getElementById('modal-total-price').innerText = currentItemBasePrice + addOnTotal;
+        };
+
+        // 6. เพิ่มลงตะกร้าพร้อม Option
+        window.addItemToCart = () => {
+            let selectedOptions = [];
+            let addOnPrice = 0;
+
+            document.querySelectorAll('#modal-options-container input:checked').forEach(input => {
+                selectedOptions.push(input.value);
+                addOnPrice += parseFloat(input.getAttribute('data-price') || 0);
+            });
+
+            const note = document.getElementById('special-note').value;
+            if (note.trim() !== '') selectedOptions.push(`หมายเหตุ: ${note}`);
+
+            cart.push({
+                id: currentItemSelecting.id,
+                name: currentItemSelecting.name,
+                price: currentItemBasePrice + addOnPrice, // ราคาต่อชิ้นที่บวก Option แล้ว
+                optionsText: selectedOptions.join(', '), // ข้อความ Option ส่งไปให้หลังบ้าน
+                qty: 1
+            });
+
+            window.closeOptionModal();
+            updateCartUI();
+        };
+
+        function updateCartUI() {
+            const bar = document.getElementById('cart-bar');
+            document.getElementById('cart-count').innerText = cart.reduce((sum, i) => sum + i.qty, 0);
+            document.getElementById('cart-total').innerText = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            cart.length > 0 ? bar.classList.remove('translate-y-full') : bar.classList.add('translate-y-full');
+        }
+
+        // 7. ส่งออเดอร์เข้าหลังบ้าน
+        window.submitDineInOrder = async () => {
+            const btn = document.getElementById('btn-submit');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังส่ง...';
+            btn.disabled = true;
+            
+            try {
+                const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+                
+                // จัดโครงสร้างให้แอดมินอ่านง่าย
+                const formattedItems = cart.map(item => ({
+                    name: item.name,
+                    qty: item.qty,
+                    price: item.price,
+                    options: item.optionsText // ถ้าไม่มี Option จะเป็น string ว่าง
+                }));
+
+                await addDoc(collection(db, "orders"), {
+                    type: "dine-in",
+                    table: TABLE_NUMBER, // ใช้ตัวแปรที่เราฝังไว้ด้านบน
+                    items: formattedItems,
+                    total: total,
+                    status: "รอคิว",
+                    timestamp: serverTimestamp()
+                });
+                
+                alert(`✅ ส่งออเดอร์ของ โต๊ะ ${TABLE_NUMBER} เข้าครัวสำเร็จ!`);
+                cart = [];
+                updateCartUI();
+            } catch (e) {
+                alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + e.message);
+            } finally {
+                btn.innerHTML = 'ส่งเข้าครัว <i class="fas fa-utensils"></i>';
+                btn.disabled = false;
+            }
+        };
+
+        // 8. บริการเสริม
+        window.callStaff = () => alert(`พนักงานกำลังไปหาคุณที่ โต๊ะ ${TABLE_NUMBER} กรุณารอสักครู่ครับ`);
+        window.requestBill = () => alert(`รับทราบ! แคชเชียร์กำลังคำนวณยอดเงินของ โต๊ะ ${TABLE_NUMBER} เพื่อนำบิลมาให้ครับ`);
+
+    </script>
+</body>
+</html>
